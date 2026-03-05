@@ -1,0 +1,189 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ listing.year }} {{ listing.brand }} {{ listing.model }} — AutoHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Browse</a></li>
+      <li class="breadcrumb-item active">{{ listing.brand }} {{ listing.model }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- LEFT: Photos & Details -->
+    <div class="col-lg-8">
+      <!-- Photo Gallery -->
+      <div class="detail-gallery mb-4">
+        {% if listing.photos.all %}
+          <div id="vehicleCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+            <div class="carousel-inner rounded-3 overflow-hidden">
+              {% for photo in listing.photos.all %}
+              <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <img src="{{ photo.image.url }}" class="d-block w-100 detail-main-img" alt="Vehicle Photo">
+              </div>
+              {% endfor %}
+            </div>
+            {% if listing.photos.count > 1 %}
+            <button class="carousel-control-prev" type="button" data-bs-target="#vehicleCarousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#vehicleCarousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon"></span>
+            </button>
+            {% endif %}
+          </div>
+          {% if listing.photos.count > 1 %}
+          <div class="d-flex gap-2 mt-2 overflow-auto photo-thumbnails">
+            {% for photo in listing.photos.all %}
+            <img src="{{ photo.image.url }}" class="thumb-img" data-bs-target="#vehicleCarousel" data-bs-slide-to="{{ forloop.counter0 }}" alt="">
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% else %}
+          <div class="no-photo-large rounded-3"><i class="bi bi-car-front-fill display-1 text-muted"></i></div>
+        {% endif %}
+      </div>
+
+      <!-- Vehicle Info -->
+      <div class="detail-info-card mb-4">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+          <div>
+            <h2 class="fw-800 mb-1">{{ listing.year }} {{ listing.brand }} {{ listing.model }}</h2>
+            <span class="badge-listing-type badge-{{ listing.listing_type }} fs-6">{{ listing.get_listing_type_display }}</span>
+          </div>
+          <div class="text-end">
+            <div class="detail-price">₱{{ listing.price|floatformat:0 }}</div>
+            {% if listing.price_unit %}<div class="text-muted">{{ listing.price_unit }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="row g-3 mt-2">
+          <div class="col-6 col-md-4">
+            <div class="spec-item"><i class="bi bi-palette-fill text-primary"></i><span>{{ listing.color }}</span><small>Color</small></div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="spec-item"><i class="bi bi-fuel-pump-fill text-warning"></i><span>{{ listing.get_fuel_type_display }}</span><small>Fuel Type</small></div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="spec-item"><i class="bi bi-gear-fill text-secondary"></i><span>{{ listing.get_transmission_display }}</span><small>Transmission</small></div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="spec-item">
+              {% if listing.has_ac %}
+                <i class="bi bi-snow2 text-info"></i><span class="text-success">Available</span>
+              {% else %}
+                <i class="bi bi-x-circle text-muted"></i><span class="text-muted">None</span>
+              {% endif %}
+              <small>Air Conditioning</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="spec-item">
+              {% if listing.has_dashcam %}
+                <i class="bi bi-camera-video-fill text-info"></i><span class="text-success">Installed</span>
+              {% else %}
+                <i class="bi bi-x-circle text-muted"></i><span class="text-muted">None</span>
+              {% endif %}
+              <small>Dashcam</small>
+            </div>
+          </div>
+          {% if listing.mileage %}
+          <div class="col-6 col-md-4">
+            <div class="spec-item"><i class="bi bi-speedometer2 text-danger"></i><span>{{ listing.mileage }} km</span><small>Mileage</small></div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if listing.description %}
+        <div class="mt-4">
+          <h6 class="fw-700">Description</h6>
+          <p class="text-muted">{{ listing.description }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Location -->
+      <div class="detail-info-card mb-4">
+        <h6 class="fw-700 mb-3"><i class="bi bi-geo-alt-fill text-warning me-2"></i>Pickup Location</h6>
+        <p class="mb-2"><strong>{{ listing.pickup_location }}</strong></p>
+        {% if listing.delivery_available %}
+          <span class="badge bg-success"><i class="bi bi-truck me-1"></i>Delivery Available</span>
+        {% endif %}
+        <div class="map-embed mt-3">
+          <iframe
+            src="https://maps.google.com/maps?q={{ listing.pickup_location|urlencode }}&output=embed"
+            width="100%" height="250" style="border:0;border-radius:12px;" allowfullscreen loading="lazy">
+          </iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Seller Info & Inquiry -->
+    <div class="col-lg-4">
+      <!-- Seller Card -->
+      <div class="seller-card mb-4 sticky-top" style="top:80px;">
+        <h6 class="fw-700 mb-3">Seller Information</h6>
+        <div class="d-flex align-items-center gap-3 mb-4">
+          {% if listing.owner.profile.profile_picture %}
+            <img src="{{ listing.owner.profile.profile_picture.url }}" class="avatar-md rounded-circle" alt="">
+          {% else %}
+            <div class="avatar-md-placeholder"><i class="bi bi-person-fill"></i></div>
+          {% endif %}
+          <div>
+            <div class="fw-700">{{ listing.owner.profile.get_full_name|default:listing.owner.username }}</div>
+            <small class="text-muted">Member since {{ listing.owner.date_joined|date:"Y" }}</small>
+          </div>
+        </div>
+
+        <div class="contact-info mb-3">
+          <div class="contact-item">
+            <i class="bi bi-telephone-fill text-primary"></i>
+            <span>{{ listing.owner.profile.phone_number }}</span>
+          </div>
+          <div class="contact-item">
+            <i class="bi bi-envelope-fill text-primary"></i>
+            <span>{{ listing.owner.email }}</span>
+          </div>
+        </div>
+
+        <div class="seller-actions d-grid gap-2">
+          <a href="tel:{{ listing.owner.profile.phone_number }}" class="btn btn-success fw-600">
+            <i class="bi bi-telephone-fill me-2"></i>Call Seller
+          </a>
+          <button class="btn btn-outline-primary fw-600" data-bs-toggle="collapse" data-bs-target="#inquiryForm">
+            <i class="bi bi-chat-dots me-2"></i>Send Inquiry
+          </button>
+        </div>
+
+        <div class="collapse mt-3" id="inquiryForm">
+          <hr>
+          <h6 class="fw-700 mb-2">Send a Message</h6>
+          <form method="post">
+            {% csrf_token %}
+            {{ inquiry_form.message }}
+            <button type="submit" class="btn btn-primary w-100 mt-2 fw-600">
+              <i class="bi bi-send me-2"></i>Send Message
+            </button>
+          </form>
+        </div>
+
+        {% if user == listing.owner %}
+        <hr>
+        <div class="d-grid gap-2 mt-2">
+          <a href="{% url 'edit_vehicle' listing.pk %}" class="btn btn-outline-warning fw-600">
+            <i class="bi bi-pencil me-2"></i>Edit Listing
+          </a>
+          <form method="post" action="{% url 'delete_vehicle' listing.pk %}" onsubmit="return confirm('Remove this listing?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger w-100 fw-600">
+              <i class="bi bi-trash me-2"></i>Delete Listing
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
